@@ -5,7 +5,7 @@ pipeline {
         IMAGE_NAME = "yawarmanzoor/frontend"
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         FULL_IMAGE = "${IMAGE_NAME}:${IMAGE_TAG}"
-        SSH_CREDENTIALS_ID = "vm-ssh-creds"
+        SSH_CREDENTIALS_ID = "SSH_CREDENTIALS_ID"
         DOCKER_HUB_CREDS_ID = "docker-hub-creds"
         REMOTE_USER = "devops"
         REMOTE_HOST = "88.222.215.30"
