@@ -5,8 +5,8 @@ pipeline {
         IMAGE_NAME = "yawarmanzoor/frontend"
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         FULL_IMAGE = "${IMAGE_NAME}:${IMAGE_TAG}"
-        SSH_CREDENTIALS_ID = "SSH_CREDENTIALS_ID"
-        DOCKER_HUB_CREDS_ID = "docker-hub-creds"
+        SSH_CREDENTIALS_ID = "SSH_CREDENTIALS_ID"          // Your SSH key credential ID
+        DOCKER_HUB_CREDS_ID = "docker-hub-creds"           // Your Docker Hub credential ID
         REMOTE_USER = "devops"
         REMOTE_HOST = "88.222.215.30"
     }
@@ -41,29 +41,30 @@ pipeline {
                 sshagent([SSH_CREDENTIALS_ID]) {
                     withCredentials([usernamePassword(credentialsId: DOCKER_HUB_CREDS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         sh '''
-                             ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} bash -c "'
-                             echo \"${DOCKER_PASS}\" | docker login -u \"${DOCKER_USER}\" --password-stdin && \
+                            ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} bash -c "'
+                                echo \\"${DOCKER_PASS}\\" | docker login -u \\"${DOCKER_USER}\\" --password-stdin && \
 
-                             docker stop frontend_Docker || true && \
-                             docker rm frontend_Docker || true && \
+                                # Stop and remove old container if exists
+                                docker stop frontend_Docker || true && \
+                                docker rm frontend_Docker || true && \
 
-                             docker pull ${FULL_IMAGE} && \
-                             docker run -d --name frontend_Docker -p 89:80 ${FULL_IMAGE} && \
+                                # Pull new image and run container
+                                docker pull ${FULL_IMAGE} && \
+                                docker run -d --name frontend_Docker -p 89:80 ${FULL_IMAGE} && \
 
-                            # Delete unused yawarmanzoor/frontend images (excluding current one)
-                            for img in $(docker images yawarmanzoor/frontend --format '{{.Repository}}:{{.Tag}}'); do
-                                if [[ \"$img\" != \"${FULL_IMAGE}\" ]]; then
-                                    if ! docker ps -a --format '{{.Image}}' | grep -q \"$img\"; then
-                                        echo \"Removing unused image: $img\"
-                                        docker rmi -f \"$img\"
+                                # Clean up unused yawarmanzoor/frontend images except the current one
+                                for img in $(docker images yawarmanzoor/frontend --format '{{.Repository}}:{{.Tag}}'); do
+                                    if [ \\"$img\\" != \\"${FULL_IMAGE}\\" ]; then
+                                        if ! docker ps -a --format '{{.Image}}' | grep -q \\"$img\\"; then
+                                            echo \\"Removing unused image: $img\\"
+                                            docker rmi -f \\"$img\\"
+                                        fi
                                     fi
-                                fi
-                            done && \
+                                done && \
 
-                            docker logout
-    '"
-'''
-
+                                docker logout
+                            '"
+                        '''
                     }
                 }
             }
