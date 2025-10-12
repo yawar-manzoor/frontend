@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "yawarmanzoor/frontend"
-        IMAGE_TAG = "latest"
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
         FULL_IMAGE = "${IMAGE_NAME}:${IMAGE_TAG}"
         SSH_CREDENTIALS_ID = "vm-ssh-creds"
         DOCKER_HUB_CREDS_ID = "docker-hub-creds"
