@@ -38,18 +38,18 @@ pipeline {
 
         stage('Deploy to VM') {
             steps {
-                sshagent (credentials: [SSH_CREDENTIALS_ID]) {
+                sshagent([SSH_CREDENTIALS_ID]) {
                     withCredentials([usernamePassword(credentialsId: DOCKER_HUB_CREDS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh """
-                            ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
-                                echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin && \
-                                docker stop myapp || true && \
-                                docker rm myapp || true && \
+                        sh '''
+                            ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} bash -c "'
+                                echo \"${DOCKER_PASS}\" | docker login -u \"${DOCKER_USER}\" --password-stdin && \
+                                docker stop  || true && \
+                                docker rm frontend_Docker || true && \
                                 docker pull ${FULL_IMAGE} && \
-                                docker run -d --name myapp -p 80:80 ${FULL_IMAGE} && \
+                                docker run -d --name frontend_Docker -p 80:80 ${FULL_IMAGE} && \
                                 docker logout
-                            '
-                        """
+                            '"
+                        '''
                     }
                 }
             }
