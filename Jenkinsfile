@@ -41,15 +41,29 @@ pipeline {
                 sshagent([SSH_CREDENTIALS_ID]) {
                     withCredentials([usernamePassword(credentialsId: DOCKER_HUB_CREDS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         sh '''
-                            ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} bash -c "'
-                                echo \"${DOCKER_PASS}\" | docker login -u \"${DOCKER_USER}\" --password-stdin && \
-                                docker stop frontend_Docker || true && \
-                                docker rm frontend_Docker || true && \
-                                docker pull ${FULL_IMAGE} && \
-                                docker run -d --name frontend_Docker -p 89:80 ${FULL_IMAGE} && \
-                                docker logout
-                            '"
-                        '''
+                             ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} bash -c "'
+                             echo \"${DOCKER_PASS}\" | docker login -u \"${DOCKER_USER}\" --password-stdin && \
+
+                             docker stop frontend_Docker || true && \
+                             docker rm frontend_Docker || true && \
+
+                             docker pull ${FULL_IMAGE} && \
+                             docker run -d --name frontend_Docker -p 89:80 ${FULL_IMAGE} && \
+
+                            # Delete unused yawarmanzoor/frontend images (excluding current one)
+                            for img in $(docker images yawarmanzoor/frontend --format '{{.Repository}}:{{.Tag}}'); do
+                                if [[ \"$img\" != \"${FULL_IMAGE}\" ]]; then
+                                    if ! docker ps -a --format '{{.Image}}' | grep -q \"$img\"; then
+                                        echo \"Removing unused image: $img\"
+                                        docker rmi -f \"$img\"
+                                    fi
+                                fi
+                            done && \
+
+                            docker logout
+    '"
+'''
+
                     }
                 }
             }
