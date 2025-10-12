@@ -46,7 +46,7 @@ pipeline {
                                 docker stop frontend_Docker || true && \
                                 docker rm frontend_Docker || true && \
                                 docker pull ${FULL_IMAGE} && \
-                                docker run -d --name frontend_Docker -p 80:80 ${FULL_IMAGE} && \
+                                docker run -d --name frontend_Docker -p 89:80 ${FULL_IMAGE} && \
                                 docker logout
                             '"
                         '''
