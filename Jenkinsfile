@@ -43,7 +43,7 @@ pipeline {
                         sh '''
                             ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} bash -c "'
                                 echo \"${DOCKER_PASS}\" | docker login -u \"${DOCKER_USER}\" --password-stdin && \
-                                docker stop  || true && \
+                                docker stop frontend_Docker || true && \
                                 docker rm frontend_Docker || true && \
                                 docker pull ${FULL_IMAGE} && \
                                 docker run -d --name frontend_Docker -p 80:80 ${FULL_IMAGE} && \
