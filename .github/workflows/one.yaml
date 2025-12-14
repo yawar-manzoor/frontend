@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
 
 env:
-  UAT_SITE_NAME: test   # CHANGE THIS to your IIS site name
+  UAT_SITE_NAME: test   # IIS site name (test)
 
 jobs:
   deploy-uat:
-    runs-on: windows-latest
+    runs-on: windows-latest   # must be Windows
 
     steps:
       - name: Checkout
@@ -19,31 +19,36 @@ jobs:
 
       # Create a simple file abc.txt
       - name: Create sample file
+        shell: pwsh
         run: |
           New-Item -Path "$env:GITHUB_WORKSPACE\abc.txt" -ItemType File -Force
           Set-Content -Path "$env:GITHUB_WORKSPACE\abc.txt" -Value "Hello UAT deployment test!"
-        shell: pwsh
 
       - name: Show file
-        run: Get-Content "$env:GITHUB_WORKSPACE\abc.txt"
         shell: pwsh
+        run: Get-Content "$env:GITHUB_WORKSPACE\abc.txt"
 
       - name: Deploy abc.txt to UAT with Web Deploy
+        shell: pwsh
         run: |
           $msdeploy = "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe"
 
           if (!(Test-Path $msdeploy)) {
-            Write-Error "msdeploy.exe not found. Hosted Windows runners may not include Web Deploy."
+            Write-Error "msdeploy.exe not found at $msdeploy. Hosted Windows runners may not include Web Deploy."
           }
+
+          # Build the full -dest argument as ONE string
+          $dest = "contentPath=C:\inetpub\wwwroot\Apercus-Marketing\$env:UAT_SITE_NAME" +
+                  ",computerName=https://${{ secrets.DEPLOY_SERVER }}:8172/msdeploy.axd?site=$env:UAT_SITE_NAME" +
+                  ",userName=${{ secrets.DEPLOY_USERNAME }}" +
+                  ",password=${{ secrets.DEPLOY_PASSWORD }}" +
+                  ",authType=Basic"
+
+          Write-Host "Using dest: $dest"
 
           & $msdeploy `
             -verb:sync `
             -source:contentPath="$env:GITHUB_WORKSPACE" `
-            -dest:contentPath="C:\inetpub\wwwroot\Apercus-Marketing\$env:UAT_SITE_NAME",
-                  computerName="https://${{ secrets.DEPLOY_SERVER }}:8172/msdeploy.axd?site=$env:UAT_SITE_NAME",
-                  userName="${{ secrets.DEPLOY_USERNAME }}",
-                  password="${{ secrets.DEPLOY_PASSWORD }}",
-                  authType="Basic" `
+            "-dest:$dest" `
             -allowUntrusted `
             -enableRule:AppOffline
-        shell: pwsh
