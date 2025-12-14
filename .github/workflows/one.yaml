@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  UAT_SITE_NAME: MyApp.UAT   # CHANGE THIS to your IIS site name
+  UAT_SITE_NAME: test   # CHANGE THIS to your IIS site name
 
 jobs:
   deploy-uat:
@@ -39,7 +39,7 @@ jobs:
           & $msdeploy `
             -verb:sync `
             -source:contentPath="$env:GITHUB_WORKSPACE" `
-            -dest:contentPath="C:\inetpub\wwwroot\$env:UAT_SITE_NAME",
+            -dest:contentPath="$env:UAT_SITE_NAME",
                   computerName="https://${{ secrets.DEPLOY_SERVER }}:8172/msdeploy.axd?site=$env:UAT_SITE_NAME",
                   userName="${{ secrets.DEPLOY_USERNAME }}",
                   password="${{ secrets.DEPLOY_PASSWORD }}",
