@@ -44,7 +44,6 @@ jobs:
                   ",password=${{ secrets.DEPLOY_PASSWORD }}" +
                   ",authType=Basic"
 
-          Write-Host "Using dest: $dest"
 
           & $msdeploy `
             -verb:sync `
