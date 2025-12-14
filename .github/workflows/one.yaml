@@ -39,7 +39,7 @@ jobs:
           & $msdeploy `
             -verb:sync `
             -source:contentPath="$env:GITHUB_WORKSPACE" `
-            -dest:contentPath="$env:UAT_SITE_NAME",
+            -dest:contentPath="C:\inetpub\wwwroot\Apercus-Marketing\$env:UAT_SITE_NAME",
                   computerName="https://${{ secrets.DEPLOY_SERVER }}:8172/msdeploy.axd?site=$env:UAT_SITE_NAME",
                   userName="${{ secrets.DEPLOY_USERNAME }}",
                   password="${{ secrets.DEPLOY_PASSWORD }}",
