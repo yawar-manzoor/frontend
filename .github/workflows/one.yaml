@@ -1,0 +1,66 @@
+name: Build and Deploy to UAT
+
+on:
+  push:
+    branches:
+      - main        # change if needed
+  workflow_dispatch: # allow manual run
+
+env:
+  BUILD_CONFIGURATION: Release
+  UAT_SITE_NAME: MyApp.UAT  # IIS site name for UAT
+
+jobs:
+  build-and-deploy-uat:
+    runs-on: windows-latest   # must be Windows (msdeploy)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'   # change if needed
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration $env:BUILD_CONFIGURATION
+
+      - name: Publish
+        run: >
+          dotnet publish
+          --configuration $env:BUILD_CONFIGURATION
+          --output $env:GITHUB_WORKSPACE\publish
+
+      - name: List published files (debug)
+        run: |
+          Write-Host "Published files:"
+          Get-ChildItem -Recurse "$env:GITHUB_WORKSPACE\publish"
+        shell: pwsh
+
+      - name: Deploy to UAT with Web Deploy
+        run: |
+          $msdeploy = "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe"
+
+          if (!(Test-Path $msdeploy)) {
+            Write-Error "msdeploy.exe not found at $msdeploy. 
+            You may need a self-hosted Windows runner with Web Deploy installed."
+          }
+
+          & $msdeploy `
+            -verb:sync `
+            -source:contentPath="$env:GITHUB_WORKSPACE\publish" `
+            -dest:contentPath="C:\inetpub\wwwroot\$env:UAT_SITE_NAME",
+                  computerName="https://${{ secrets.DEPLOY_SERVER }}:8172/msdeploy.axd?site=$env:UAT_SITE_NAME",
+                  userName="${{ secrets.DEPLOY_USERNAME }}",
+                  password="${{ secrets.DEPLOY_PASSWORD }}",
+                  authType="Basic" `
+            -allowUntrusted `
+            -enableRule:AppOffline `
+            -retryAttempts:3 `
+            -retryInterval:5000 `
+            -setParam:name="IIS Web Application Name",value="$env:UAT_SITE_NAME"
+        shell: pwsh
