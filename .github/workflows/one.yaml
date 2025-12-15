@@ -1,4 +1,4 @@
-name: Deploy abc.txt to UAT
+name: Deploy to UAT
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Create a simple file abc.txt
+      # Create a sample file (for testing)
       - name: Create sample file
         shell: pwsh
         run: |
@@ -28,7 +28,7 @@ jobs:
         shell: pwsh
         run: Get-Content "$env:GITHUB_WORKSPACE\abc.txt"
 
-      - name: Deploy abc.txt to UAT with Web Deploy
+      - name: Deploy to IIS with Web Deploy
         shell: pwsh
         run: |
           $msdeploy = "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe"
