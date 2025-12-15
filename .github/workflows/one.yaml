@@ -11,16 +11,23 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Create publish folder
+    - name: Prepare publish folder
+      shell: cmd
       run: |
+        if exist C:\Deploy\Publish rmdir /s /q C:\Deploy\Publish
         mkdir C:\Deploy\Publish
-        echo "Hello IIS Deploy Test" > C:\Deploy\Publish\index.html
+        echo Hello IIS Deploy Test > C:\Deploy\Publish\index.html
 
-    - name: Deploy to IIS using msdeploy
-      shell: pwsh
+    - name: Verify Web Deploy exists
+      shell: cmd
       run: |
-        & "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" `
-          -verb:sync `
-          -source:contentPath="C:\Deploy\Publish" `
-          -dest:contentPath="test",computerName="${{ secrets.DEPLOY_SERVER }}",userName="${{ secrets.DEPLOY_USERNAME }}",password="${{ secrets.DEPLOY_PASSWORD }}",authType="Basic" `
-          -allowUntrusted
+        dir "C:\Program Files\IIS\Microsoft Web Deploy V3"
+
+    - name: Deploy to IIS using Web Deploy
+      shell: cmd
+      run: |
+        "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" ^
+        -verb:sync ^
+        -source:contentPath=C:\Deploy\Publish ^
+        -dest:contentPath=test,computerName=${{ secrets.DEPLOY_SERVER }},userName=${{ secrets.DEPLOY_USERNAME }},password=${{ secrets.DEPLOY_PASSWORD }},authType=Basic ^
+        -allowUntrusted
