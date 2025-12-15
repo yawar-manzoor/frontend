@@ -1,4 +1,4 @@
-name: Deploy to UAT
+name: Deploy to UAT (CMD)
 
 on:
   push:
@@ -28,25 +28,12 @@ jobs:
         shell: pwsh
         run: Get-Content "$env:GITHUB_WORKSPACE\abc.txt"
 
-      - name: Deploy to IIS with Web Deploy
-        shell: pwsh
+      - name: Deploy to IIS with Web Deploy (CMD)
+        shell: cmd
         run: |
-          $msdeploy = "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe"
-
-          if (!(Test-Path $msdeploy)) {
-            Write-Error "msdeploy.exe not found at $msdeploy. Hosted Windows runners may not include Web Deploy."
-          }
-
-          # Build the destination string
-          $dest = "contentPath=." +
-                  ",computerName=https://${{ secrets.DEPLOY_SERVER }}:8172/msdeploy.axd?site=$env:UAT_SITE_NAME" +
-                  ",userName=${{ secrets.DEPLOY_USERNAME }}" +
-                  ",password=${{ secrets.DEPLOY_PASSWORD }}" +
-                  ",authType=Basic"
-
-          & $msdeploy `
-            -verb:sync `
-            -source:contentPath="$env:GITHUB_WORKSPACE" `
-            "-dest:$dest" `
-            -allowUntrusted `
-            -enableRule:AppOffline
+          "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" ^
+           -verb:sync ^
+           -source:contentPath="%GITHUB_WORKSPACE%\abc.txt" ^
+           -dest:contentPath="abc.txt",computerName="https://${{ secrets.DEPLOY_SERVER }}:8172/msdeploy.axd?site=%UAT_SITE_NAME%",userName="${{ secrets.DEPLOY_USERNAME }}",password="${{ secrets.DEPLOY_PASSWORD }}",authType="Basic" ^
+           -allowUntrusted ^
+           -enableRule:AppOffline
