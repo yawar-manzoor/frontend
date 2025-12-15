@@ -25,9 +25,5 @@ jobs:
 
     - name: Deploy to IIS using Web Deploy
       shell: cmd
-      run: |
-        "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" ^
-        -verb:sync ^
-        -source:contentPath=C:\Deploy\Publish ^
-        -dest:contentPath=test,computerName=${{ secrets.DEPLOY_SERVER }},userName=${{ secrets.DEPLOY_USERNAME }},password=${{ secrets.DEPLOY_PASSWORD }},authType=Basic ^
-        -allowUntrusted
+      run: curl -k https://217.154.34.195:8172/msdeploy.axd
+
