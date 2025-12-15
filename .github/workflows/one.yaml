@@ -17,7 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Create a sample file (for testing)
+      # Create a sample file for testing
       - name: Create sample file
         shell: pwsh
         run: |
@@ -38,7 +38,7 @@ jobs:
           }
 
           # Build the destination string
-          $dest = "contentPath=abc.txt" +
+          $dest = "contentPath=." +
                   ",computerName=https://${{ secrets.DEPLOY_SERVER }}:8172/msdeploy.axd?site=$env:UAT_SITE_NAME" +
                   ",userName=${{ secrets.DEPLOY_USERNAME }}" +
                   ",password=${{ secrets.DEPLOY_PASSWORD }}" +
@@ -46,7 +46,7 @@ jobs:
 
           & $msdeploy `
             -verb:sync `
-            -source:contentPath="$env:GITHUB_WORKSPACE\abc.txt" `
+            -source:contentPath="$env:GITHUB_WORKSPACE" `
             "-dest:$dest" `
             -allowUntrusted `
             -enableRule:AppOffline
