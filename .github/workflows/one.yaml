@@ -1,4 +1,4 @@
-name: Deploy to UAT (CMD)
+name: Deploy to UAT (CMD with retries)
 
 on:
   push:
@@ -11,29 +11,38 @@ env:
 
 jobs:
   deploy-uat:
-    runs-on: windows-latest   # must be Windows runner
+    runs-on: windows-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Create a sample file for testing
       - name: Create sample file
         shell: pwsh
         run: |
           New-Item -Path "$env:GITHUB_WORKSPACE\abc.txt" -ItemType File -Force
           Set-Content -Path "$env:GITHUB_WORKSPACE\abc.txt" -Value "Hello UAT deployment test!"
 
-      - name: Show file contents
-        shell: pwsh
-        run: Get-Content "$env:GITHUB_WORKSPACE\abc.txt"
-
-      - name: Deploy to IIS with Web Deploy (CMD)
+      - name: Deploy to IIS with Web Deploy (CMD, 3 retries)
         shell: cmd
         run: |
+          set RETRIES=0
+          :retry
           "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" ^
            -verb:sync ^
            -source:contentPath="%GITHUB_WORKSPACE%\abc.txt" ^
            -dest:contentPath="abc.txt",computerName="https://${{ secrets.DEPLOY_SERVER }}:8172/msdeploy.axd?site=%UAT_SITE_NAME%",userName="${{ secrets.DEPLOY_USERNAME }}",password="${{ secrets.DEPLOY_PASSWORD }}",authType="Basic" ^
            -allowUntrusted ^
            -enableRule:AppOffline
+
+          if errorlevel 1 (
+            set /a RETRIES+=1
+            if %RETRIES% lss 3 (
+              echo Retry attempt %RETRIES%...
+              timeout /t 5
+              goto retry
+            ) else (
+              echo Deployment failed after 3 attempts.
+              exit /b 1
+            )
+          )
