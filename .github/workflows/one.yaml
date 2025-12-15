@@ -1,48 +1,25 @@
-name: Deploy to UAT (CMD with retries)
+name: Deploy to IIS via WebDeploy
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
-env:
-  UAT_SITE_NAME: test   # IIS site name in IIS Manager
-
 jobs:
-  deploy-uat:
+  deploy:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Create sample file
-        shell: pwsh
-        run: |
-          New-Item -Path "$env:GITHUB_WORKSPACE\abc.txt" -ItemType File -Force
-          Set-Content -Path "$env:GITHUB_WORKSPACE\abc.txt" -Value "Hello UAT deployment test!"
+    - name: Create publish folder
+      run: |
+        mkdir C:\Deploy\Publish
+        echo "Hello IIS Deploy Test" > C:\Deploy\Publish\index.html
 
-      - name: Deploy to IIS with Web Deploy (CMD, 3 retries)
-        shell: cmd
-        run: |
-          set RETRIES=0
-          :retry
-          "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" ^
-           -verb:sync ^
-           -source:contentPath="%GITHUB_WORKSPACE%\abc.txt" ^
-           -dest:contentPath="abc.txt",computerName="https://${{ secrets.DEPLOY_SERVER }}:8172/msdeploy.axd?site=%UAT_SITE_NAME%",userName="${{ secrets.DEPLOY_USERNAME }}",password="${{ secrets.DEPLOY_PASSWORD }}",authType="Basic" ^
-           -allowUntrusted ^
-           -enableRule:AppOffline
-
-          if errorlevel 1 (
-            set /a RETRIES+=1
-            if %RETRIES% lss 3 (
-              echo Retry attempt %RETRIES%...
-              timeout /t 5
-              goto retry
-            ) else (
-              echo Deployment failed after 3 attempts.
-              exit /b 1
-            )
-          )
+    - name: Deploy to IIS using msdeploy
+      run: |
+        "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" `
+        -verb:sync `
+        -source:contentPath="C:\Deploy\Publish" `
+        -dest:contentPath="test",computerName="${{ secrets.DEPLOY_SERVER }}",userName="${{ secrets.DEPLOY_USERNAME }}",password="${{ secrets.DEPLOY_PASSWORD }}",authType="Basic" `
+        -allowUntrusted
